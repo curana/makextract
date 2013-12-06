@@ -14,22 +14,42 @@ set ports = `pkg_info | awk '{ system("pkg_info -o -q " $1) }' | awk '{ print("/
 # Extract the used options from each port
 foreach elem ($ports:q)
 	set config = `echo ${elem:q} | awk '{ system("cd "$1 "&& make showconfig") }'`
-	
-	# Skip ports without options
-	if ("x$config" != "x") then
-		echo '.if ${.CURDIR:M*'${elem:q}'/*}' >> make.conf
-	endif
-	
-	# Write discovered options to local make.conf
-	foreach elem ($config:q)
-		if ($elem:q =~ *=*:) then
-			set output = `echo ${elem:q} | sed '$s/.$//'` 
-			echo "    " $output >> make.conf
-		endif
-	end
 
-	# Skip ports without options
-	if ("x$config" != "x") then
-		echo ".endif" >> make.conf
-	endif
+    # Only handle ports with options
+    if ("x${config}" != "x") then
+    	set unique = `cd ${elem:q} && make -V UNIQUENAME`       # Reads the unique-Port-Identifier for make
+        set unique_set = "${unique}_SET="                       # Prepare the _SET list, eg. nginx_SET=
+        set unique_unset = "${unique}_UNSET="                   # Prepare the _UNSET list, eg. nginx-UNSET=
+
+        # Add discovered options to the list
+        foreach elem ($config:q)
+        	# Handle options which have been set to "ON"
+            if ($elem:q =~ *=on*:) then
+            	set option = `echo ${elem:q} | awk -F "=" '{ print $1 }'`       # Extract the option's name
+                set unique_set = "${unique_set} ${option}"                      # Add the option to the list
+
+                # Handle options which have been set to "OFF"
+            else if ($elem:q =~ *=off*:) then
+                set option = `echo ${elem:q} | awk -F "=" '{ print $1 }'`       # Extract the option's name
+                set unique_unset = "${unique_unset} ${option}"                  # Add the option to the list
+            endif
+        end
+
+        # Write the lists only if parameters were found and set
+        if ("${unique_set}" != "${unique}_SET=" || "${unique_unset}" != "${unique}_UNSET=") then
+        	# Write a separator
+            echo >> make.conf
+            echo "# Options for ${unique}:" >> make.conf
+
+            if ("${unique_set}" != "${unique}_SET=") then
+            	echo ${unique_set} >>  make.conf
+            endif
+            if ("${unique_unset}" != "${unique}_UNSET=") then
+                echo ${unique_unset} >>  make.conf
+            endif
+        endif
+
+        # Clean up
+        unset option unique unique_set unique_unset
+    endif
 end
