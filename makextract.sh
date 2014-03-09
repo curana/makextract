@@ -8,12 +8,19 @@
 # Copy /etc/make.conf to the current directory
 cp /etc/make.conf .
 
-# Extract the ports origin via pkg_info
-set ports = `pkg_info | awk '{ system("pkg_info -o -q " $1) }' | awk '{ print("/usr/ports/"$1) }'`
+if (`whereis -q pkg` == "") then                     
+        # Extract the ports origin via pkg_info
+        echo "Info: Using pkg_info"
+        set ports = `pkg_info | awk '{ system("pkg_info -oq " $1) }' | awk '{ print("/usr/ports/"$1) }'`
+else                                              
+        # Extract the ports origin via pkg info (pkgng)
+        echo "Info: Using pkgng"
+        set ports = `pkg info | awk '{ system("pkg info -oq " $1) }' | awk '{ print("/usr/ports/"$1) }'`
+endif
 
 # Extract the used options from each port
 foreach elem ($ports:q)
-	set config = `echo ${elem:q} | awk '{ system("cd "$1 "&& make showconfig") }'`
+    set config = `echo ${elem:q} | awk '{ system("cd "$1 "&& make showconfig") }'`
 
     # Only handle ports with options
     if ("x${config}" != "x") then
