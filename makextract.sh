@@ -24,7 +24,7 @@ foreach elem ($ports:q)
 
     # Only handle ports with options
     if ("x${config}" != "x") then
-    	set unique = `cd ${elem:q} && make -V UNIQUENAME`       # Reads the unique-Port-Identifier for make
+    	set unique = `cd ${elem:q} && make -V OPTIONS_NAME`       # Reads the unique-Port-Identifier for make
         set unique_set = "${unique}_SET="                       # Prepare the _SET list, eg. nginx_SET=
         set unique_unset = "${unique}_UNSET="                   # Prepare the _UNSET list, eg. nginx-UNSET=
 
