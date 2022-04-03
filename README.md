@@ -3,6 +3,8 @@ makextract
 
 makextract is a very (!) simple script to create a *make.conf* based on the port options chosen during port installation.
 
+compatible with FreeBSD 13.0 and above
+
 ## USAGE:
 
 1. Download the makextract.sh file
